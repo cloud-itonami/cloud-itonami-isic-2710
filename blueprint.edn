@@ -1,0 +1,37 @@
+{:itonami.blueprint/id "cloud-itonami-isic-2710"
+ :itonami.blueprint/name "Manufacture of electric motors, generators, transformers and electricity distribution and control apparatus"
+ :itonami.blueprint/isic-rev5 "2710"
+ :itonami.blueprint/domain :electrical-equipment/manufacturing
+ :itonami.blueprint/license "AGPL-3.0-or-later"
+ :itonami.blueprint/social-impact [:worker-safety :electrical-safety :grid-reliability]
+ :itonami.blueprint/governor :electrical-equipment-plant-operations-governor
+ :itonami.blueprint/robotics true
+ :itonami.blueprint/required-technologies [:robotics :identity :forms :dmn :bpmn :audit-ledger :eda :cae]
+ :itonami.blueprint/status :public-oss
+ :itonami.blueprint/maturity :implemented
+ :itonami.blueprint/implemented-slice
+ "ElecEquipAdvisor ⊣ Electrical Equipment Plant Operations Governor,
+ langgraph-clj StateGraph, append-only audit ledger. A plant OPERATIONS
+ COORDINATION actor for electric motor, generator, transformer and
+ electricity distribution/control apparatus manufacturing (winding/
+ insulation/assembly/testing lines producing finished electrical
+ equipment) -- not direct winding/assembly/test-bench-equipment control
+ authority and not electrical-safety-certification authority (e.g.
+ UL/CE/IEC compliance mark). Four ops (`:log-production-batch` /
+ `:schedule-maintenance` / `:flag-safety-concern` /
+ `:coordinate-shipment`), all `:effect :propose` only. Twelve concrete
+ governor checks elaborate this blueprint's four HARD invariants:
+ propose-only effect, closed op allowlist, closed proposal-effect
+ allowlist (no direct winding/assembly/test-bench-equipment control),
+ permanent equipment-actuate block, permanent safety-certification-
+ authority block (this actor never self-issues an electrical-safety
+ compliance mark), independent equipment verification/registration
+ before maintenance scheduling, independent batch verification/
+ registration before shipment coordination, independent shipment-
+ quantity recompute against the batch's own logged production
+ quantity, double-schedule guard, product-type validation, dielectric-
+ test-voltage plausibility validation, and defect-rate plausibility
+ validation. Safety-concern flagging (insulation-failure/electrical-
+ safety/high-voltage-test-hazard) ALWAYS escalates to a human plant
+ supervisor; `:log-production-batch` is the only op eligible to
+ auto-commit, and only at phase 3 when governor-clean."}
