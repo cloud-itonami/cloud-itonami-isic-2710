@@ -158,7 +158,19 @@
                                        ALWAYS set for `:flag-safety-
                                        concern`) -- escalate to a human
                                        plant supervisor. SOFT: the
-                                       human may approve."
+                                       human may approve.
+
+  Addendum (superproject part-supplier-linkage ADR,
+  cloud-itonami-isic-2710<->cloud-itonami-isic-2813, ADR-2800000500):
+  a FOURTEENTH HARD check, `handoff-incomplete-violations`, was added
+  alongside an OPTIONAL `:handoff` field on `:coordinate-shipment`
+  (the superproject `:handoff` shared shape, ADR-2607177600, reused
+  as-is -- no new shape). `:handoff` names which downstream
+  manufacturer actor (e.g. cloud-itonami-isic-2813) this shipment is
+  destined for; unlike isic-1075's own `:coordinate-shipment` (which
+  made `:handoff` MANDATORY), this actor's `:handoff` stays OPTIONAL
+  -- a shipment with none is unaffected, one with an incomplete
+  `:handoff` HARD-holds."
   (:require [elecequipmfg.registry :as registry]
             [elecequipmfg.store :as store]))
 
@@ -327,10 +339,38 @@
         [{:rule :invalid-defect-rate
           :detail (str rr "% は物理的に妥当な不良率の範囲外")}]))))
 
+(defn- handoff-incomplete-violations
+  "For `:coordinate-shipment`, `:handoff` (the superproject `:handoff`
+  shared shape, ADR-2607177600/ADR-2800000500, reused as-is toward
+  cloud-itonami-isic-2813) is entirely OPTIONAL -- a shipment with NO
+  `:handoff` at all is NOT a violation (this actor ships to any
+  downstream customer, tracked or not, the same 'optional field absent
+  -> not checked' discipline jsic-4721's own `:handoff`-optional
+  inbound/outbound shipment ops use, ADR-2607177600 Alternatives). But
+  a `:handoff` that IS present and missing any of its own three
+  identity/correlation fields (`registry/handoff-fields-present?`) is
+  a fabricated/incomplete reference -- HARD hold, the same
+  anti-fabrication discipline every other required-field check in this
+  ns applies."
+  [{:keys [op]} proposal]
+  (when (= op :coordinate-shipment)
+    (when-let [handoff (:handoff (:value proposal))]
+      (when-not (registry/handoff-fields-present? handoff)
+        [{:rule :handoff-incomplete
+          :detail "handoff参照が付与されているが必須フィールド(:handoff/id・:handoff/source-actor・:handoff/batch-id)が不足 -- 架空/不完全なhandoff参照では出荷調整できない"}]))))
+
 (defn check
   "Censors an ElecEquipAdvisor proposal against the governor rules.
   Returns {:ok? bool :violations [..] :confidence c :escalate? bool
-  :high-stakes? bool :hard? bool}."
+  :high-stakes? bool :hard? bool}.
+
+  Includes `handoff-incomplete-violations` -- a FOURTEENTH hard check
+  added alongside the superproject part-supplier-linkage ADR
+  (ADR-2800000500), purely additive: it only ever fires for
+  `:coordinate-shipment` proposals that carry a `:handoff` map, and
+  only when that map is itself incomplete; a proposal with no
+  `:handoff` at all (every pre-existing caller of this op) is
+  completely unaffected."
   [request _context proposal st]
   (let [hard (into []
                    (concat (no-propose-effect-violations request)
@@ -344,7 +384,8 @@
                            (shipment-quantity-exceeded-violations request proposal st)
                            (invalid-product-type-violations request proposal)
                            (invalid-dielectric-test-kv-violations request proposal)
-                           (invalid-defect-rate-violations request proposal)))
+                           (invalid-defect-rate-violations request proposal)
+                           (handoff-incomplete-violations request proposal)))
         conf (:confidence proposal 0.0)
         low? (< conf confidence-floor)
         stakes? (boolean (high-stakes (:stake proposal)))

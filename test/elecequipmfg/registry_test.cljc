@@ -1,5 +1,5 @@
 (ns elecequipmfg.registry-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.test :refer [deftest is testing]]
             [elecequipmfg.registry :as r]))
 
 ;; ----------------------------- equipment-verified? / equipment-registered? / equipment-ready? -----------------------------
@@ -162,3 +162,22 @@
     (is (= 2 (count hist2)))
     (is (= "MNT-000000" (get-in hist2 [0 "record_id"])))
     (is (= "MNT-000001" (get-in hist2 [1 "record_id"])))))
+
+;; ----------------------------- handoff-fields-present? (superproject part-supplier-linkage ADR-2800000500) -----------------------------
+
+(deftest handoff-fields-present-when-all-three-identity-fields-set
+  (is (true? (r/handoff-fields-present?
+              {:handoff/id "ho-1" :handoff/source-actor "cloud-itonami-isic-2710"
+               :handoff/batch-id "batch-001"}))))
+
+(deftest handoff-fields-not-present-when-any-identity-field-missing
+  (is (false? (r/handoff-fields-present? {:handoff/id "ho-1" :handoff/source-actor "cloud-itonami-isic-2710"})))
+  (is (false? (r/handoff-fields-present? {:handoff/id "ho-1" :handoff/batch-id "batch-001"})))
+  (is (false? (r/handoff-fields-present? {})))
+  (is (false? (r/handoff-fields-present? nil))))
+
+(deftest handoff-fields-present-ignores-domain-specific-optional-fields
+  (testing "electric motors are not cold-chain goods -- absence of :handoff/cold-chain-temp-min-c/max-c/:handoff/quantity-kg must never make an otherwise-complete handoff incomplete"
+    (is (true? (r/handoff-fields-present?
+                {:handoff/id "ho-1" :handoff/source-actor "cloud-itonami-isic-2710"
+                 :handoff/batch-id "batch-001" :handoff/product-type-id "part:electric-motor"})))))
