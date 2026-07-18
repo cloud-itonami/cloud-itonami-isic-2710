@@ -240,3 +240,35 @@
 
 (defn append [history result]
   (conj (vec history) (get result "record")))
+
+;; ----------------------------- :handoff (additive, optional) -----------------------------
+;;
+;; Superproject part-supplier-linkage ADR (cloud-itonami-isic-2710<->
+;; cloud-itonami-isic-2813, ADR-2800000500). `:coordinate-shipment` may
+;; OPTIONALLY carry a `:handoff` (the superproject `:handoff` shared
+;; shape, ADR-2607177600, isic-1075<->jsic-4721, REUSED AS-IS -- no
+;; new shape) naming which downstream manufacturer actor (e.g. cloud-
+;; itonami-isic-2813, a pressure-equipment manufacturer consuming this
+;; actor's electric motors into its own BOM) this shipment is destined
+;; for. Unlike isic-1075's OWN `:coordinate-shipment` (which made
+;; `:handoff` MANDATORY, ADR-2607177600), this actor's `:handoff` stays
+;; entirely OPTIONAL -- this actor ships to any downstream customer,
+;; tracked or not; existing `:coordinate-shipment` callers that never
+;; set `:handoff` are completely unaffected.
+
+(defn handoff-fields-present?
+  "True when `handoff` carries the three identity/correlation
+  `:handoff/*` fields (`:handoff/id`/`:handoff/source-actor`/
+  `:handoff/batch-id`) the superproject `:handoff` shared shape
+  requires for traceability -- called ONLY when a `:handoff` map is
+  actually present on a shipment proposal (see `elecequipmfg.governor/
+  handoff-incomplete-violations`); a proposal with NO `:handoff` at
+  all never reaches this predicate. Domain-specific optional fields on
+  the shared shape (`:handoff/product-type-id`/`:handoff/quantity-kg`/
+  `:handoff/cold-chain-temp-min-c`/`:handoff/cold-chain-temp-max-c`/
+  `:handoff/dispatched-at-iso`) are NOT required here -- electric
+  motors are not cold-chain goods, the same 'optional field absent ->
+  not checked' discipline cloud-itonami-jsic-4721's own handoff-
+  compatibility check uses."
+  [handoff]
+  (every? some? ((juxt :handoff/id :handoff/source-actor :handoff/batch-id) handoff)))

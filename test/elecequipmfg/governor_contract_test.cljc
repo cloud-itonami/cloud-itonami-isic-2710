@@ -210,6 +210,56 @@
         (is (= :commit (get-in r2 [:state :disposition])))
         (is (= 1 (count (store/shipment-history db))))))))
 
+;; ───────────── Additive: :handoff on :coordinate-shipment (superproject part-supplier-linkage ADR-2800000500) ─────────────
+;;
+;; The ISSUER side of the superproject `:handoff` shared shape
+;; (ADR-2607177600, isic-1075<->jsic-4721, reused as-is here) toward
+;; cloud-itonami-isic-2813 -- OPTIONAL, unlike isic-1075's own
+;; mandatory `:handoff`.
+
+(deftest coordinate-shipment-without-handoff-is-unaffected
+  (testing "no :handoff at all -- completely unaffected, the SAME behaviour as before this addition"
+    (let [[db actor] (fresh)
+          res (exec-op actor "t15" {:op :coordinate-shipment :effect :propose :subject "ship-4"
+                                    :value {:batch-id "batch-001" :units 50.0
+                                            :destination "buyer-yard-north"}}
+                       coordinator)]
+      (is (= :interrupted (:status res)))
+      (let [r2 (approve! actor "t15")]
+        (is (= :commit (get-in r2 [:state :disposition])))
+        (is (nil? (:handoff (store/shipment db "ship-4"))))))))
+
+(deftest coordinate-shipment-with-complete-handoff-clean-always-escalates-then-links-the-customer
+  (testing "a :handoff naming the downstream manufacturer actor registers and carries through to the SSoT -- coordinate-shipment is still never auto"
+    (let [[db actor] (fresh)
+          res (exec-op actor "t16" {:op :coordinate-shipment :effect :propose :subject "ship-5"
+                                    :value {:batch-id "batch-001" :units 50.0
+                                            :destination "buyer-yard-north"
+                                            :handoff {:handoff/id "ho-1"
+                                                      :handoff/source-actor "cloud-itonami-isic-2710"
+                                                      :handoff/batch-id "batch-001"
+                                                      :handoff/product-type-id "part:electric-motor"
+                                                      :handoff/dispatched-at-iso "2026-07-18T00:00:00Z"}}}
+                       coordinator)]
+      (is (= :interrupted (:status res)))
+      (let [r2 (approve! actor "t16")
+            sh (store/shipment db "ship-5")]
+        (is (= :commit (get-in r2 [:state :disposition])))
+        (is (= "cloud-itonami-isic-2710" (:handoff/source-actor (:handoff sh))))
+        (is (= "batch-001" (:handoff/batch-id (:handoff sh))))))))
+
+(deftest coordinate-shipment-with-incomplete-handoff-is-held
+  (testing "a :handoff that IS present but missing its own required identity fields -> HOLD, even though :handoff itself is optional"
+    (let [[db actor] (fresh)
+          res (exec-op actor "t17" {:op :coordinate-shipment :effect :propose :subject "ship-6"
+                                    :value {:batch-id "batch-001" :units 50.0
+                                            :handoff {:handoff/source-actor "cloud-itonami-isic-2710"}}}
+                       coordinator)]
+      (is (= :hold (get-in res [:state :disposition])))
+      (is (not= :interrupted (:status res)))
+      (is (some #{:handoff-incomplete} (-> (store/ledger db) last :basis)))
+      (is (empty? (store/shipment-history db))))))
+
 (deftest every-decision-leaves-one-ledger-fact
   (testing "write-only-through-ledger: N settled operations -> N ledger facts"
     (let [[db actor] (fresh)]
