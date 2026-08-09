@@ -8,19 +8,29 @@
  ;; directly (not only under :dev) so a bare `clojure -M:test` works
  ;; offline inside the monorepo checkout without depending on
  ;; langgraph's own transitive git/sha pin being fetchable.
- :deps {io.github.kotoba-lang/langgraph
+ ;;
+ ;; jp-go-digital-design-system is the DADS product-face skin used by
+ ;; `elecequipmfg.render-html` to emit `docs/samples/operator-console.html`
+ ;; (flagship checklist item 2, ADR-2607189300 Wave3).
+ :deps {io.github.kotoba-lang/jp-go-digital-design-system
+        {:git/url "https://github.com/kotoba-lang/jp-go-digital-design-system"
+         :git/sha "83db99546eabc53613ae826ea41d1533a3c574af"}
+        io.github.kotoba-lang/langgraph
         {:local/root "../../kotoba-lang/langgraph"}
         io.github.kotoba-lang/langchain
         {:local/root "../../kotoba-lang/langchain"}}
  :aliases
- {;; offline workspace dev -- pin transitive langchain to local checkout
-  ;; (kept for parity with sibling actors' deps.edn shape; redundant
-  ;; with the top-level :deps override above).
+ {;; offline workspace dev -- pin transitive langchain + DADS to local checkout
   :dev {:override-deps
         {io.github.kotoba-lang/langchain
-         {:local/root "../../kotoba-lang/langchain"}}}
+         {:local/root "../../kotoba-lang/langchain"}
+         io.github.kotoba-lang/jp-go-digital-design-system
+         {:local/root "../../kotoba-lang/jp-go-digital-design-system"}}}
   ;; clojure -M:dev:run  -> drive the demo through one OperationActor
   :run {:main-opts ["-m" "elecequipmfg.sim"]}
+  ;; clojure -M:dev:render-html [out-file] -> regenerate docs/samples/operator-console.html
+  ;; through the real actor (flagship checklist item 2, ADR-2607189300 Wave3).
+  :render-html {:main-opts ["-m" "elecequipmfg.render-html"]}
   :test {:extra-paths ["test"]
          :extra-deps {io.github.cognitect-labs/test-runner
                       {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
