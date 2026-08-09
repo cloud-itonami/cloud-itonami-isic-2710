@@ -67,13 +67,29 @@ clojure -M:dev:test
 # Run the demo
 clojure -M:dev:run
 
+# Regenerate the operator console sample through the REAL actor stack
+# (flagship checklist item 2 — drives operation/governor/store, no hand-typed numbers)
+clojure -M:dev:render-html
+# default output: docs/samples/operator-console.html
+
 # Lint
 clojure -M:lint
 ```
 
+## Operator console sample
+
+[docs/samples/operator-console.html](docs/samples/operator-console.html) is a
+build-time snapshot rendered by `elecequipmfg.render-html` from a real
+`elecequipmfg.operation` run against `elecequipmfg.store/sample-data!`.
+Regenerate with `clojure -M:dev:render-html` — the page is byte-identical
+across reruns against the same seed.
+
 ## Status
 
-`:implemented` — `governor.cljc`/`store.cljc`/`advisor.cljc`/`registry.cljc` + `deps.edn` complete the module set; tests green, demo runnable, langgraph-clj integration verified.
+`:implemented` — `governor.cljc`/`store.cljc`/`advisor.cljc`/`registry.cljc`/
+`render_html.clj` + `deps.edn` complete the module set; tests green, demo
+runnable, langgraph-clj integration verified, operator console generated
+from the real actor.
 
 ## License
 
