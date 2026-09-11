@@ -59,21 +59,21 @@ Classic governed-actor pattern (`elecequipmfg.operation/build`, a langgraph-clj 
 
 ```bash
 # Run tests (top-level deps.edn already pins langgraph+langchain local/root)
-clojure -M:test
+kbb -M:test
 
 # Run tests via the workspace :dev override alias (equivalent, kept for sibling-repo parity)
-clojure -M:dev:test
+kbb -M:dev:test
 
 # Run the demo
-clojure -M:dev:run
+kbb -M:dev:run
 
 # Regenerate the operator console sample through the REAL actor stack
 # (flagship checklist item 2 — drives operation/governor/store, no hand-typed numbers)
-clojure -M:dev:render-html
+kbb -M:dev:render-html
 # default output: docs/samples/operator-console.html
 
 # Lint
-clojure -M:lint
+kbb -M:lint
 ```
 
 ## Operator console sample
@@ -81,7 +81,7 @@ clojure -M:lint
 [docs/samples/operator-console.html](docs/samples/operator-console.html) is a
 build-time snapshot rendered by `elecequipmfg.render-html` from a real
 `elecequipmfg.operation` run against `elecequipmfg.store/sample-data!`.
-Regenerate with `clojure -M:dev:render-html` — the page is byte-identical
+Regenerate with `kbb -M:dev:render-html` — the page is byte-identical
 across reruns against the same seed.
 
 ## Status
