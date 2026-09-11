@@ -6,7 +6,7 @@
   sample console. This namespace drives the REAL actor stack
   (`elecequipmfg.operation` -> `elecequipmfg.governor` ->
   `elecequipmfg.store`) through a scenario adapted from this repo's own
-  `elecequipmfg.sim` demo driver (`clojure -M:dev:run`, confirmed BEFORE
+  `elecequipmfg.sim` demo driver (`kbb -M:dev:run`, confirmed BEFORE
   writing this file against the real seeded ids `batch-001`..`batch-003`
   / `winder-001` / `test-bench-002` -- ids match
   `elecequipmfg.store/sample-data!`, so it was safe to reuse rather than
@@ -15,7 +15,7 @@
   timestamps in the page content, byte-identical across reruns against
   the same seed (verify by diffing two consecutive runs).
 
-  Usage: `clojure -M:dev:render-html [out-file]`
+  Usage: `kbb -M:dev:render-html [out-file]`
   (default `docs/samples/operator-console.html`)."
   (:require [jp-go-dds.skin]
             [kotoba.lang.text :as str]
@@ -333,7 +333,7 @@
    "<main>\n"
    "  <section class=\"card\">\n"
    "    <h2>Production batches</h2>\n"
-   "    <p class=\"muted\">Demo snapshot — build-time-generated from <code>elecequipmfg.store</code> via <code>elecequipmfg.render-html</code> (<code>clojure -M:dev:render-html</code>). No invented numbers; every cell is real governor/store output.</p>\n"
+   "    <p class=\"muted\">Demo snapshot — build-time-generated from <code>elecequipmfg.store</code> via <code>elecequipmfg.render-html</code> (<code>kbb -M:dev:render-html</code>). No invented numbers; every cell is real governor/store output.</p>\n"
    (batches-table db) "\n"
    "  </section>\n"
    "  <section class=\"card\">\n"
