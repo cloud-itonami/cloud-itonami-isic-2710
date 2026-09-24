@@ -1,0 +1,32 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:dev:physics` runs it.
+;;
+;; README: the ISIC 2710 plant winds copper/aluminium coils, insulates them,
+;; assembles motors / generators / transformers and tests them before
+;; shipment. The robots' physical work: running the heat-run (temperature
+;; rise) test of a winding and reading its hot spot against the insulation
+;; class, and loading a wound stator onto the test bench.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isic-2710"
+ :cases
+ [{:id :winding-heat-run
+   :kind :thermal
+   :procedure "heat-run test: a 30 mm winding stack dissipates copper loss while forced air at 40 C cools one face; the hot spot is the opposite, adiabatic face"
+   :params {:thickness-m 0.030 :conductivity-w-mk 1.0 :density-kg-m3 6000.0 :specific-heat-j-kgk 500.0
+            :t0-c 40.0 :t-hot-c 40.0 :h-front-w-m2k 50.0 :h-back-w-m2k 0.0
+            :threshold-c 155.0 :duration-s 21600.0 :nodes 7}
+   :sweep {:param :q-gen-w-m3 :values [20000.0 50000.0 80000.0 100000.0 130000.0]}
+   :quantity :peak-back-c
+   :limit {:max 155.0 :basis "IEC 60085 thermal class 155 (F) for the winding insulation; the stack's effective conductivity 1 W/mK and the air-side h are estimates"}
+   :boundary {:lo 10000.0 :hi 200000.0}}
+  {:id :stator-onto-test-bench
+   :kind :manipulator
+   :procedure "heavy-payload arm lifts a wound stator from the varnish-cure rack onto the motor test bench"
+   :params {:l1-m 0.80 :l2-m 0.70 :m1-kg 20.0 :m2-kg 12.0
+            :from [0.90 0.10] :to [0.40 0.80] :duration-s 3.0 :steps 400}
+   :sweep {:param :payload-kg :values [5.0 10.0 20.0 30.0 45.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 700.0 :basis "estimate: continuous shoulder torque of a ~50 kg-class industrial arm"}
+   :boundary {:lo 1.0 :hi 150.0}}]}
